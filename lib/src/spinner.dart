@@ -1,11 +1,11 @@
 import 'dart:async' show Timer, StreamSubscription;
 import 'dart:io' show ProcessSignal;
 
-import 'framework/framework.dart';
-import 'theme/theme.dart';
-import 'utils/utils.dart';
+import 'package:interact/src/framework/framework.dart';
+import 'package:interact/src/theme/theme.dart';
+import 'package:interact/src/utils/utils.dart';
 
-String _prompt(bool x) => '';
+String _prompt(bool done, bool error) => '';
 
 /// A spinner or a loading indicator component.
 class Spinner extends Component<SpinnerState> {
@@ -35,11 +35,11 @@ class Spinner extends Component<SpinnerState> {
 
   /// The prompt function to be shown on the left side
   /// of the spinning indicator or icon.
-  final String Function(bool) leftPrompt;
+  final String Function(bool, bool) leftPrompt;
 
   /// The prompt function to be shown on the right side
   /// of the spinning indicator or icon.
-  final String Function(bool) rightPrompt;
+  final String Function(bool, bool) rightPrompt;
 
   @override
   _SpinnerState createState() => _SpinnerState();
@@ -63,15 +63,21 @@ class Spinner extends Component<SpinnerState> {
 /// Handles a [Spinner]'s state.
 class SpinnerState {
   /// Constructs a state to manage a [Spinner].
-  SpinnerState({required this.done});
+  SpinnerState({
+    required this.done,
+    required this.error,
+  });
 
   /// Function to be called to indicate that the
   /// spinner is loaded.
   void Function() Function() done;
+
+  void Function() Function() error;
 }
 
 class _SpinnerState extends State<Spinner> {
   late bool done;
+  late bool error;
   late int index;
   late StreamSubscription<ProcessSignal> sigint;
 
@@ -79,6 +85,7 @@ class _SpinnerState extends State<Spinner> {
   void init() {
     super.init();
     done = false;
+    error = false;
     index = 0;
     sigint = handleSigint();
     context.hideCursor();
@@ -94,7 +101,7 @@ class _SpinnerState extends State<Spinner> {
   void render() {
     final line = StringBuffer();
 
-    line.write(component.leftPrompt(done));
+    line.write(component.leftPrompt(done, error));
 
     if (done) {
       line.write(component.icon);
@@ -102,7 +109,7 @@ class _SpinnerState extends State<Spinner> {
       line.write(component.theme.spinners[index]);
     }
     line.write(' ');
-    line.write(component.rightPrompt(done));
+    line.write(component.rightPrompt(done, error));
 
     context.writeln(line.toString());
   }
@@ -124,6 +131,19 @@ class _SpinnerState extends State<Spinner> {
       done: () {
         setState(() {
           done = true;
+          sigint.cancel();
+        });
+        timer.cancel();
+        if (component._context != null) {
+          return dispose;
+        } else {
+          dispose();
+          return () {};
+        }
+      },
+      error: () {
+        setState(() {
+          error = true;
           sigint.cancel();
         });
         timer.cancel();

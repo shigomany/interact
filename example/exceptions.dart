@@ -4,7 +4,7 @@ Future<void> main() async {
   try {
     Spinner(
       icon: '🚨',
-      rightPrompt: (done) => 'throwing an exception',
+      rightPrompt: (done, error) => 'throwing an exception',
     ).interact();
     await Future.delayed(const Duration(seconds: 1));
     throw Exception();

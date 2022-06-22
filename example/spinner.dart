@@ -6,7 +6,7 @@ Future<void> main() async {
   final gift = Spinner.withTheme(
     theme: theme,
     icon: '🏆',
-    rightPrompt: (done) => done
+    rightPrompt: (done, error) => done
         ? 'here is a trophy for being patient'
         : 'searching a thing for you',
   ).interact();
